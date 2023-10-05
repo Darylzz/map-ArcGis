@@ -3,7 +3,7 @@ import MapView from '@arcgis/core/views/MapView';
 
 export class MapService {
   map: Map | null;
-  mapView: MapView | null;
+  mapView: MapView;
 
   createMap(container: any) {
     this.map = new Map({
