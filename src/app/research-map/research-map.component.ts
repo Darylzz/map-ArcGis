@@ -8,6 +8,8 @@ import SketchViewModel from '@arcgis/core/widgets/Sketch/SketchViewModel';
 import GraphicLayer from '@arcgis/core/layers/GraphicsLayer';
 import Polygon from '@arcgis/core/geometry/Polygon';
 import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
+import * as geometryEngine from '@arcgis/core/geometry/geometryEngine';
+
 @Component({
   selector: 'app-research-map',
   templateUrl: './research-map.component.html',
@@ -72,7 +74,7 @@ export class ResearchMapComponent implements OnInit {
     this.mapService.mapView?.graphics.removeAll();
     this.clickPin = false;
     this.clickXY = false;
-    this.clickPolygon = !this.clickPolygon;
+    this.clickPolygon = true;
     if (!this.sketchViewModel) {
       const graphicLayer = new GraphicLayer();
       console.log(this.clickPolygon);
@@ -93,7 +95,10 @@ export class ResearchMapComponent implements OnInit {
         this.sketchViewModel.create('polygon');
         this.sketchViewModel.on('create', (event) => {
           console.log(event);
-          if (event.state === 'complete') {
+          if (
+            event.state === 'active' &&
+            event.toolEventInfo.type === 'vertex-add'
+          ) {
             const geometry: any = event.graphic.geometry;
             const polygon = new Polygon({
               rings: geometry.rings,
@@ -112,6 +117,48 @@ export class ResearchMapComponent implements OnInit {
             });
             this.mapService.mapView?.graphics.removeAll();
             this.mapService.mapView?.graphics.add(graphic);
+          }
+          if (event.state === 'complete') {
+            const geometry: any = event.graphic.geometry;
+            const polygon = new Polygon({
+              rings: geometry.rings,
+              spatialReference: geometry.spatialReference,
+            });
+            const symbol = new SimpleFillSymbol({
+              color: [39, 189, 138, 0.5],
+              outline: {
+                color: [39, 189, 138],
+                width: 2,
+              },
+            });
+            const textSymbol = {
+              type: 'text',
+              color: 'green',
+              haloColor: 'white',
+              haloSize: 2,
+              text:
+                Number(
+                  geometryEngine.geodesicArea(polygon, 'square-kilometers')
+                ).toLocaleString(undefined, { maximumFractionDigits: 2 }) +
+                'ตารางกิโลเมตร',
+            };
+            const textGraphic = new Graphic({
+              geometry: polygon.centroid,
+              symbol: textSymbol,
+            });
+            const graphic = new Graphic({
+              geometry: polygon,
+              symbol: symbol,
+            });
+            this.mapService.mapView?.graphics.removeAll();
+            this.mapService.mapView?.graphics.addMany([graphic, textGraphic]);
+
+            this.sketchViewModel.create('polygon');
+            this.sketchViewModel.on('create', (event) => {
+              if (event.state === 'active') {
+                this.mapService.mapView.graphics.removeAll();
+              }
+            });
           }
         });
       }
