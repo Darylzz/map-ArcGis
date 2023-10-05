@@ -167,6 +167,7 @@ export class ResearchMapComponent implements OnInit {
               Number(
                 geometryEngine.geodesicArea(polygon, 'square-kilometers')
               ).toLocaleString(undefined, { maximumFractionDigits: 2 }) +
+              '' +
               'ตารางกิโลเมตร',
           };
           const textGraphic = new Graphic({
