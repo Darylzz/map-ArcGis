@@ -4,4 +4,12 @@
   <button (click)="onClickPolyline()">Polyline</button>
   <button (click)="onClickPolygon()">Polygon</button>
 </div>
+<div *ngIf="clickXY === true">
+  <label>Longitude</label>
+  <input type="text" maxlength="8" [(ngModel)]="searchLong" />
+  <label>Latitude</label>
+  <input type="text" maxlength="8" [(ngModel)]="searchLat" />
+  <button type="submit" (click)="onSubmitForm()">ค้นหา</button>
+  <button type="button" (click)="onClearForm()">ล้างค่า</button>
+</div>
 <div id="viewMap" #viewMap></div>
