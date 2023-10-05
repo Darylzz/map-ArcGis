@@ -10,12 +10,40 @@ import { MenuItem } from 'primeng/api';
 export class ResearchMapComponent implements OnInit {
   @ViewChild('viewMap', { static: true }) viewMap: ElementRef;
   item: MenuItem[] = [{ label: 'Pin' }, { label: 'XY' }, { label: 'Polygon' }];
-  clickPin: any;
-  clickXY: any;
-  clickPolyline: any;
-  clickPolygon: any;
+  clickPin: boolean = false;
+  clickXY: boolean = false;
+  clickPolyline: boolean = false;
+  clickPolygon: boolean = false;
   constructor(private mapService: MapService) {}
   ngOnInit(): void {
     this.mapService.createMap(this.viewMap.nativeElement);
+  }
+
+  onGetLocateByPin() {
+    this.clickPin = true;
+    this.clickPolygon = false;
+    this.clickPolyline = false;
+    this.clickXY = false;
+  }
+
+  onClickXY() {
+    this.clickPin = false;
+    this.clickPolygon = false;
+    this.clickPolyline = false;
+    this.clickXY = true;
+  }
+
+  onClickPolyline() {
+    this.clickPin = false;
+    this.clickPolygon = false;
+    this.clickPolyline = true;
+    this.clickXY = false;
+  }
+
+  onClickPolygon() {
+    this.clickPin = false;
+    this.clickPolygon = true;
+    this.clickPolyline = false;
+    this.clickXY = false;
   }
 }
