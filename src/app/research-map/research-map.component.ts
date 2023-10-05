@@ -32,10 +32,12 @@ export class ResearchMapComponent implements OnInit {
   }
 
   onGetLocateByPin() {
-    this.clickPin = !this.clickPin;
+    this.mapService.mapView.graphics.removeAll();
+    this.clickPin = true;
     this.clickPolygon = false;
     this.clickXY = false;
     if (this.clickPin === true) {
+      this.sketchViewModel?.cancel();
       this.mapService.mapView?.when(() => {
         this.mapService.mapView?.on('click', (event) => {
           const mapPoint = event.mapPoint;
@@ -60,6 +62,7 @@ export class ResearchMapComponent implements OnInit {
         });
       });
     } else {
+      this.clickPin = false;
     }
   }
 
@@ -67,7 +70,35 @@ export class ResearchMapComponent implements OnInit {
     this.mapService.mapView?.graphics.removeAll();
     this.clickPin = false;
     this.clickPolygon = false;
-    this.clickXY = !this.clickXY;
+    this.clickXY = true;
+    if (this.clickXY === true) {
+      this.sketchViewModel?.cancel();
+      this.mapService.mapView.when(() => {
+        this.mapService.mapView.on('click', (event) => {
+          const mapPoint = event.mapPoint;
+          this.searchLat = mapPoint.latitude;
+          this.searchLong = mapPoint.longitude;
+          const point = new Point({
+            latitude: this.searchLat,
+            longitude: this.searchLong,
+          });
+          const marker = new SimpleMarkerSymbol({
+            color: 'blue',
+            outline: {
+              color: 'tranparent',
+              width: 2,
+            },
+          });
+          const graphic = new Graphic({
+            geometry: point,
+            symbol: marker,
+          });
+          this.mapService.mapView.graphics.removeAll();
+          this.mapService.mapView.graphics.add(graphic);
+          this.mapService.mapView.goTo(point);
+        });
+      });
+    }
   }
 
   onClickPolygon() {
@@ -75,93 +106,88 @@ export class ResearchMapComponent implements OnInit {
     this.clickPin = false;
     this.clickXY = false;
     this.clickPolygon = true;
-    if (!this.sketchViewModel) {
-      const graphicLayer = new GraphicLayer();
-      console.log(this.clickPolygon);
-      if (this.clickPolygon === true) {
-        this.sketchViewModel = new SketchViewModel({
-          view: this.mapService.mapView,
-          layer: graphicLayer,
-          polygonSymbol: {
-            type: 'simple-fill',
+    const graphicLayer = new GraphicLayer();
+    if (this.clickPolygon === true) {
+      this.sketchViewModel = new SketchViewModel({
+        view: this.mapService.mapView,
+        layer: graphicLayer,
+        polygonSymbol: {
+          type: 'simple-fill',
+          color: [39, 189, 138, 0.5],
+          outline: {
+            color: [39, 189, 138],
+            width: 2,
+          },
+        },
+      });
+      this.sketchViewModel.create('polygon');
+      this.sketchViewModel.on('create', (event) => {
+        if (
+          event.state === 'active' &&
+          event.toolEventInfo.type === 'vertex-add'
+        ) {
+          const geometry: any = event.graphic.geometry;
+          const polygon = new Polygon({
+            rings: geometry.rings,
+            spatialReference: geometry.spatialReference,
+          });
+          const symbol = new SimpleFillSymbol({
             color: [39, 189, 138, 0.5],
             outline: {
               color: [39, 189, 138],
               width: 2,
             },
-          },
-        });
+          });
+          const graphic = new Graphic({
+            geometry: polygon,
+            symbol: symbol,
+          });
+          this.mapService.mapView?.graphics.removeAll();
+          this.mapService.mapView?.graphics.add(graphic);
+        }
+        if (event.state === 'complete') {
+          const geometry: any = event.graphic.geometry;
+          const polygon = new Polygon({
+            rings: geometry.rings,
+            spatialReference: geometry.spatialReference,
+          });
+          const symbol = new SimpleFillSymbol({
+            color: [39, 189, 138, 0.5],
+            outline: {
+              color: [39, 189, 138],
+              width: 2,
+            },
+          });
+          const textSymbol = {
+            type: 'text',
+            color: 'green',
+            haloColor: 'white',
+            haloSize: 2,
+            text:
+              Number(
+                geometryEngine.geodesicArea(polygon, 'square-kilometers')
+              ).toLocaleString(undefined, { maximumFractionDigits: 2 }) +
+              'ตารางกิโลเมตร',
+          };
+          const textGraphic = new Graphic({
+            geometry: polygon.centroid,
+            symbol: textSymbol,
+          });
+          const graphic = new Graphic({
+            geometry: polygon,
+            symbol: symbol,
+          });
+          this.mapService.mapView?.graphics.removeAll();
+          this.mapService.mapView?.graphics.addMany([graphic, textGraphic]);
 
-        this.sketchViewModel.create('polygon');
-        this.sketchViewModel.on('create', (event) => {
-          console.log(event);
-          if (
-            event.state === 'active' &&
-            event.toolEventInfo.type === 'vertex-add'
-          ) {
-            const geometry: any = event.graphic.geometry;
-            const polygon = new Polygon({
-              rings: geometry.rings,
-              spatialReference: geometry.spatialReference,
-            });
-            const symbol = new SimpleFillSymbol({
-              color: [39, 189, 138, 0.5],
-              outline: {
-                color: [39, 189, 138],
-                width: 2,
-              },
-            });
-            const graphic = new Graphic({
-              geometry: polygon,
-              symbol: symbol,
-            });
-            this.mapService.mapView?.graphics.removeAll();
-            this.mapService.mapView?.graphics.add(graphic);
-          }
-          if (event.state === 'complete') {
-            const geometry: any = event.graphic.geometry;
-            const polygon = new Polygon({
-              rings: geometry.rings,
-              spatialReference: geometry.spatialReference,
-            });
-            const symbol = new SimpleFillSymbol({
-              color: [39, 189, 138, 0.5],
-              outline: {
-                color: [39, 189, 138],
-                width: 2,
-              },
-            });
-            const textSymbol = {
-              type: 'text',
-              color: 'green',
-              haloColor: 'white',
-              haloSize: 2,
-              text:
-                Number(
-                  geometryEngine.geodesicArea(polygon, 'square-kilometers')
-                ).toLocaleString(undefined, { maximumFractionDigits: 2 }) +
-                'ตารางกิโลเมตร',
-            };
-            const textGraphic = new Graphic({
-              geometry: polygon.centroid,
-              symbol: textSymbol,
-            });
-            const graphic = new Graphic({
-              geometry: polygon,
-              symbol: symbol,
-            });
-            this.mapService.mapView?.graphics.removeAll();
-            this.mapService.mapView?.graphics.addMany([graphic, textGraphic]);
-
-            this.sketchViewModel.create('polygon');
-            this.sketchViewModel.on('create', (event) => {
-              if (event.state === 'active') {
-                this.mapService.mapView.graphics.removeAll();
-              }
-            });
-          }
-        });
-      }
+          this.sketchViewModel.create('polygon');
+          this.sketchViewModel.on('create', (event) => {
+            if (event.state === 'active') {
+              this.mapService.mapView.graphics.removeAll();
+            }
+          });
+        }
+      });
     }
   }
 
@@ -171,7 +197,7 @@ export class ResearchMapComponent implements OnInit {
       longitude: this.searchLong,
     });
     const marker = new SimpleMarkerSymbol({
-      color: 'red',
+      color: 'blue',
       outline: {
         color: 'tranparent',
         width: 2,
