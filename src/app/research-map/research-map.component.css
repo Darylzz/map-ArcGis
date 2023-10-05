@@ -7,3 +7,12 @@
   width: 100vw;
   height: 80vh;
 }
+.menu {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.menu button {
+  width: 100px;
+  height: 40px;
+}
